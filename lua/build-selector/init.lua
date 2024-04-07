@@ -29,7 +29,12 @@ M.devcontainers = function(cwd)
 end
 
 M.simplify = function(path, cwd)
-  return require('plenary').path:new(path):make_relative()
+  local ok, plenary = pcall(require, 'plenary')
+  if ok then
+    return plenary.path:new(path):make_relative()
+  else
+    return path
+  end
 end
 
 M.choice_makefile = function(file)

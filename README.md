@@ -21,8 +21,14 @@ Detects `CMakeLists.txt` and then searches for `build*/CMakeCache.txt` and adds
 
 Lazy:
 
-```
-{ "segcore/build-selector.nvim", opts = {} }
+```lua
+{
+    "segcore/build-selector.nvim",
+    dependencies = {
+        "nvim-lua/plenary.nvim", -- Optional; to simplify file paths
+    },
+    opts = {},
+}
 ```
 
 ## Usage
