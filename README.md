@@ -22,7 +22,7 @@ Detects `CMakeLists.txt` and then searches for `build*/CMakeCache.txt` and adds
 Lazy:
 
 ```
-{ "segcore/build-selector", opts = {} }
+{ "segcore/build-selector.nvim", opts = {} }
 ```
 
 ## Usage
