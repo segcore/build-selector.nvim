@@ -50,6 +50,8 @@ Available options, documented with their default values:
 ```lua
 opts = {
     simplify = true, -- Simplify file paths relative to the current working directory
+    add_command = true, -- Add the :BuildSelector user command
+    selected_callback = function(item) vim.opt.makeprg = item end, -- Called when an item is selected
 }
 ```
 

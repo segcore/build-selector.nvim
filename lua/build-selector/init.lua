@@ -87,25 +87,26 @@ M.simplify = function(path, cwd)
   end
 end
 
---- Create a single makefile choice from the given file
+--- Create a single makefile choice from the given Makefile
 M.choice_makefile = function(file)
   return "make -f " .. M.simplify(file)
 end
 
---- Create a single cmake choice from the given file
+--- Create a table of choices from the given CMakeLists.txt file
 M.choice_cmake = function(file)
   -- Find a build directory next to this file
+  local results = {}
   local dirname = vim.fs.dirname(file)
   for subdir_name, type in vim.fs.dir(dirname) do
     if vim.startswith(subdir_name, "build") and type == 'directory' then
       local cmake_cache = vim.fs.joinpath(dirname, subdir_name, "CMakeCache.txt")
       if vim.fn.filereadable(cmake_cache) == 1 then
-        return 'cmake --build ' .. M.simplify(vim.fs.joinpath(dirname, subdir_name)) .. " --parallel"
+        table.insert(results, 'cmake --build ' .. M.simplify(vim.fs.joinpath(dirname, subdir_name)) .. " --parallel")
       end
     end
   end
+  return results
 end
-
 
 --- Table of variables to expand
 M.expand_table = {
@@ -164,21 +165,32 @@ end
 
 
 --- Get a list of all detected choices
-M.choices = function(cwd)
+M.choices = function(cwd, opts_)
+  local opts = opts_ or opts
   local result = {}
-  for _, file in pairs(M.makefiles(cwd)) do
-    table.insert(result, M.choice_makefile(file))
-  end
-  for _, file in pairs(M.cmakelists(cwd)) do
-    local entry = M.choice_cmake(file)
-    if entry then table.insert(result, entry) end
+
+  if opts.makefile ~= false then
+    for _, file in pairs(M.makefiles(cwd)) do
+      table.insert(result, M.choice_makefile(file))
+    end
   end
 
-  local original = vim.tbl_map(function(x) return x end, result)
-  for _, file in ipairs(M.devcontainers(cwd)) do
-    for _, other_entry in ipairs(original) do
-      local deventry = M.choice_devcontainer(file, nil, other_entry, cwd)
-      if deventry then table.insert(result, deventry) end
+  if opts.cmake ~= false then
+    for _, file in pairs(M.cmakelists(cwd)) do
+      local entries = M.choice_cmake(file)
+      for _, entry in ipairs(entries) do
+        if entry then table.insert(result, entry) end
+      end
+    end
+  end
+
+  if opts.devcontainer ~= false then
+    local original = vim.tbl_map(function(x) return x end, result)
+    for _, file in ipairs(M.devcontainers(cwd)) do
+      for _, other_entry in ipairs(original) do
+        local deventry = M.choice_devcontainer(file, nil, other_entry, cwd)
+        if deventry then table.insert(result, deventry) end
+      end
     end
   end
   return result
@@ -191,8 +203,12 @@ M.choose = function(choices)
   if choices and #choices > 0 then
     vim.ui.select(choices, { prompt = 'Set make program to::' }, function(item, index)
       if item then
-        print("makeprg set to " .. item)
-        vim.opt_local.makeprg = item
+        if opts.selected_callback then
+          opts.selected_callback(item)
+        else
+          print("makeprg set to " .. item)
+          vim.opt.makeprg = item
+        end
       end
     end)
   else
@@ -200,10 +216,18 @@ M.choose = function(choices)
   end
 end
 
+--- Calls M.choose() with nil arguments.
+--- Useful in callback functions which supply arguments which you don't need.
+M.choose_default = function()
+  M.choose()
+end
 
+--- Setup the plugin with given options
 M.setup = function(opts_)
   opts = opts_ or opts
-  vim.api.nvim_create_user_command('BuildSelector', function() M.choose() end, { desc = 'Select a makeprg' })
+  if opts.add_command ~= false then
+    vim.api.nvim_create_user_command('BuildSelector', M.choose_default, { desc = 'Select a makeprg' })
+  end
 end
 
 return M
