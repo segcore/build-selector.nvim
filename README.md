@@ -45,6 +45,14 @@ Lazy:
 }
 ```
 
+Available options, documented with their default values:
+
+```lua
+opts = {
+    simplify = true, -- Simplify file paths relative to the current working directory
+}
+```
+
 ## Usage
 
 ```

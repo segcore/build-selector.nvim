@@ -1,5 +1,7 @@
 local M = {}
 
+local opts = {}
+
 local function getcwd()
   return vim.uv.cwd()
 end
@@ -66,10 +68,20 @@ M.devcontainers = function(cwd)
 end
 
 --- Simplify the path as a relative path
-M.simplify = function(path, cwd)
+M.simplify_raw = function(path, cwd)
   local ok, plenary = pcall(require, 'plenary')
   if ok then
     return plenary.path:new(path):make_relative()
+  else
+    return path
+  end
+end
+
+M.simplify = function(path, cwd)
+  if not opts or opts.simplify == nil or opts.simplify == true then
+    return M.simplify_raw(path, cwd)
+  elseif type(opts.simplify) == "function" then
+    return opts.simplify(path, cwd)
   else
     return path
   end
@@ -95,12 +107,31 @@ M.choice_cmake = function(file)
 end
 
 
+--- Table of variables to expand
+M.expand_table = {
+  localWorkspaceFolderBasename = function(cwd)
+    cwd = cwd or getcwd()
+    return vim.fs.basename(cwd)
+  end
+}
+
+--- Expand variables of the form '${...}' using M.expand_table
+M.expand_vars = function(name, cwd)
+  -- local modname = string.gsub(name, "%$%b%{%}", function(match)
+  local modname = string.gsub(name, "%$%{([%w_]+)%}", function(match)
+    local expander = M.expand_table[match]
+    return expander and expander(cwd) or match
+  end)
+  return modname
+end
+
 --- Create a single devcontainer docker choice from the given file
 ---@param file string File path
 ---@param arg "run"|"exec"|nil Docker run type
 ---@param command string Command (e.g. 'make -f Makefile')
+---@param cwd string? current working directory
 ---@return string? devcommand Final command to be run (e.g. 'docker exec ... make -f Makefile')
-M.choice_devcontainer = function(file, arg, command)
+M.choice_devcontainer = function(file, arg, command, cwd)
   arg = arg or "exec"
   local buffer = vim.uri_to_bufnr(vim.uri_from_fname(file))
   vim.fn.bufload(buffer)
@@ -116,6 +147,15 @@ M.choice_devcontainer = function(file, arg, command)
   if not ok then return end
 
   local name = json.name
+  if json.runArgs then
+    for _, value in ipairs(json.runArgs) do
+      if vim.startswith(value, "--name=") then
+        name = string.sub(value, #"--name=" + 1)
+      end
+    end
+  end
+  name = M.expand_vars(name, cwd)
+
   if name then
     -- docker exec DEVNAME cmake --build build-x --parallel
     return 'docker ' .. arg .. ' ' .. name .. ' ' .. command
@@ -137,7 +177,7 @@ M.choices = function(cwd)
   local original = vim.tbl_map(function(x) return x end, result)
   for _, file in ipairs(M.devcontainers(cwd)) do
     for _, other_entry in ipairs(original) do
-      local deventry = M.choice_devcontainer(file, nil, other_entry)
+      local deventry = M.choice_devcontainer(file, nil, other_entry, cwd)
       if deventry then table.insert(result, deventry) end
     end
   end
@@ -161,7 +201,8 @@ M.choose = function(choices)
 end
 
 
-M.setup = function()
+M.setup = function(opts_)
+  opts = opts_ or opts
   vim.api.nvim_create_user_command('BuildSelector', function() M.choose() end, { desc = 'Select a makeprg' })
 end
 
