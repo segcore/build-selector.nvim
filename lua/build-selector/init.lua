@@ -32,6 +32,25 @@ M.cmakelists = function(cwd)
   return M.find_files({'CMakeLists.txt'}, cwd)
 end
 
+--- Get a list of Odin-language directories
+M.odindirs = function(cwd)
+  cwd = cwd or getcwd()
+  local odin_dirs = {}
+  local cache = {}
+  vim.fs.find(function(name, path)
+    if vim.endswith(name, '.odin') then
+      if not cache[path] then
+        cache[path] = true
+        table.insert(odin_dirs, path)
+      end
+    end
+    return false -- we only use this function for its side-effects
+  end, {
+    type = 'file', limit = math.huge
+  })
+  return odin_dirs
+end
+
 --- Get a list of devcontainer.json files
 M.devcontainers = function(cwd)
   cwd = cwd or getcwd()
@@ -108,6 +127,10 @@ M.choice_cmake = function(file)
   return results
 end
 
+M.choice_odin = function(dir)
+  return 'odin build ' .. M.simplify(dir)
+end
+
 --- Table of variables to expand
 M.expand_table = {
   localWorkspaceFolderBasename = function(cwd)
@@ -181,6 +204,12 @@ M.choices = function(cwd, opts_)
       for _, entry in ipairs(entries) do
         if entry then table.insert(result, entry) end
       end
+    end
+  end
+
+  if opts.odin ~= false then
+    for _, file in pairs(M.odindirs(cwd)) do
+      table.insert(result, M.choice_odin(file))
     end
   end
 

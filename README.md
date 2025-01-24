@@ -7,7 +7,33 @@ programs.
 ## Overview
 
 Detects files such as `Makefile` and `CMakeLists.txt` and builds up options
-that you may want to use as `makeprg`.
+that you may want to use as the vim `makeprg`.
+
+## Usage
+
+```
+:BuildSelector
+```
+
+Or add a key-map such as
+
+```lua
+vim.keymap.set('n', '<leader>b', require('build-selector').choose_default)
+```
+
+This pops up the default ui-select menu with selections, e.g.
+
+```sh
+1. make -f Makefile
+2. cmake --build build-debug --parallel
+3. cmake --build build-rpi-release --parallel
+4. odin build mylib
+```
+
+Or if using something like [telescope-ui-select](https://github.com/nvim-telescope/telescope-ui-select.nvim):
+![telescope-ui-select-image](resources/telescope-ui-select.png)
+
+## Supported Formats
 
 ### Makefile
 
@@ -17,6 +43,10 @@ Detects `Makefile` and `makefile`, and adds options `make -f <FILE>`
 
 Detects `CMakeLists.txt` and then searches for `build*/CMakeCache.txt` and adds
 `cmake --build <PATH> --parallel` for each of them.
+
+### Odin
+
+Detects `*.odin` and then adds `odin build <dir>` for each of unique directory.
 
 ### Devcontainers
 
@@ -33,7 +63,7 @@ docker exec MyContainerName cmake --build build-gcc-debug --parallel
 
 ## Setup
 
-Lazy:
+Using [Lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
@@ -55,17 +85,22 @@ opts = {
 }
 ```
 
-## Usage
+A more extravagant example:
 
-```
-:BuildSelector
-```
-
-Pops up the default ui-select menu with selections, e.g.
-
-```
-1. make -f Makefile
-2. cmake --build build-gcc-debug --parallel
-3. cmake --build build-gcc-release --parallel
-4. cmake --build build-rpi-release --parallel
+```lua
+{
+    "segcore/build-selector.nvim",
+    config = function()
+        local bs = require('build-selector')
+        bs.setup({ simplify = false })
+        vim.keymap.set('n', '<leader>b', bs.choose_default, { desc = 'Open build selector' })
+        vim.keymap.set('n', '<leader>B', function()
+            local choices = bs.choices()
+            choices = vim.tbl_filter(function(entry)
+                return string.match(entry, "docker")
+            end, choices)
+            bs.choose(choices)
+        end, { desc = 'Open build selector for docker builds' })
+    end,
+},
 ```
