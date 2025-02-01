@@ -128,7 +128,7 @@ M.choice_cmake = function(file)
 end
 
 M.choice_odin = function(dir)
-  return 'odin build ' .. M.simplify(dir)
+  return 'odin build ' .. M.simplify(dir) .. ' -error-pos-style:unix'
 end
 
 --- Table of variables to expand
