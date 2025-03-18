@@ -46,7 +46,11 @@ Detects `CMakeLists.txt` and then searches for `build*/CMakeCache.txt` and adds
 
 ### Odin
 
-Detects `*.odin` and then adds `odin build <dir>` for each of unique directory.
+Detects `*.odin` and then adds `odin build <dir>` for each unique directory.
+
+### Jai
+
+Detects `*.jai` and then adds `jai -x64 <file>` for each file.
 
 ### Devcontainers
 

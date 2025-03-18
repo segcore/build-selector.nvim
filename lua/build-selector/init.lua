@@ -46,9 +46,35 @@ M.odindirs = function(cwd)
     end
     return false -- we only use this function for its side-effects
   end, {
-    type = 'file', limit = math.huge
+    path = cwd, type = 'file', limit = math.huge
   })
   return odin_dirs
+end
+
+--- Get a list of Jai-language files beneath the cwd
+M.jai_files = function(cwd)
+  cwd = cwd or getcwd()
+  local jai_files = {}
+  local priority = {}
+  vim.fs.find(function(name, path)
+    if vim.endswith(name, '.jai') then
+      local f = vim.fs.joinpath(path, name)
+      if vim.startswith(name, 'first') or vim.startswith(name, 'build') then
+        table.insert(priority, f)
+      else
+        table.insert(jai_files, f)
+      end
+    end
+    return false -- we only use this function for its side-effects
+  end, {
+    path = cwd, type = 'file', limit = math.huge
+  })
+
+  -- Append after the priority items
+  for _, v in ipairs(jai_files) do
+    table.insert(priority, v)
+  end
+  return priority
 end
 
 --- Get a list of devcontainer.json files
@@ -131,6 +157,10 @@ M.choice_odin = function(dir)
   return 'odin build ' .. M.simplify(dir) .. ' -error-pos-style:unix'
 end
 
+M.choice_jai = function(file)
+  return 'jai -x64 ' .. M.simplify(file)
+end
+
 --- Table of variables to expand
 M.expand_table = {
   localWorkspaceFolderBasename = function(cwd)
@@ -210,6 +240,12 @@ M.choices = function(cwd, opts_)
   if opts.odin ~= false then
     for _, file in pairs(M.odindirs(cwd)) do
       table.insert(result, M.choice_odin(file))
+    end
+  end
+
+  if opts.jai ~= false then
+    for _, file in pairs(M.jai_files(cwd)) do
+      table.insert(result, M.choice_jai(file))
     end
   end
 
