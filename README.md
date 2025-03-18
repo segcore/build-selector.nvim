@@ -50,7 +50,8 @@ Detects `*.odin` and then adds `odin build <dir>` for each unique directory.
 
 ### Jai
 
-Detects `*.jai` and then adds `jai -x64 <file>` for each file.
+Detects `*.jai` and then adds `jai -x64 <file>` for each file, prioritising
+first*.jai and build*.jai
 
 ### Devcontainers
 
@@ -86,6 +87,11 @@ opts = {
     simplify = true, -- Simplify file paths relative to the current working directory
     add_command = true, -- Add the :BuildSelector user command
     selected_callback = function(item) vim.opt.makeprg = item end, -- Called when an item is selected
+    makefile = true, -- Look for Makefiles
+    cmake = true, -- Look for CMake build directories
+    odin = true, -- Look for Odin directories
+    jai = true, -- Look for Jai files
+    devcontainer = true, -- Look for devcontainer files
 }
 ```
 
