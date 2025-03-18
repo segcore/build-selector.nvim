@@ -1,13 +1,17 @@
 # Build Selector for Neovim
 
 Utility to intelligently calculate likely `makeprg` targets to easily select a
-build target. This allows follow-up use of `:make` commands to compile the
-programs.
+build target.
 
 ## Overview
 
 Detects files such as `Makefile` and `CMakeLists.txt` and builds up options
-that you may want to use as the vim `makeprg`.
+that you may want to use as the vim `makeprg`, and supports a vim ui prompt for
+you to choose one.
+
+This allows easily building the application with `:make`, or `m<CR>` to
+dispatch a background build when using
+[tpope/vim-dispatch](https://github.com/tpope/vim-dispatch).
 
 ## Usage
 
