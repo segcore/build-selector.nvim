@@ -198,7 +198,7 @@ M.choice_devcontainer = function(file, arg, command, cwd)
   end
   local file_contents = table.concat(lines, "\n")
   local ok, json = pcall(vim.json.decode, file_contents)
-  if not ok then return end
+  if not ok then print("failed to json decode " .. file) return end
 
   local name = json.name
   if json.runArgs then
@@ -266,7 +266,7 @@ end
 M.choose = function(choices)
   choices = choices or M.choices()
   if choices and #choices > 0 then
-    vim.ui.select(choices, { prompt = 'Set make program to::' }, function(item, index)
+    vim.ui.select(choices, { prompt = 'Set make program to::', kind = opts.ui_select_kind }, function(item, index)
       if item then
         if opts.selected_callback then
           opts.selected_callback(item)

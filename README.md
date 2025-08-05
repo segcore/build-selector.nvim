@@ -96,6 +96,7 @@ opts = {
     odin = true, -- Look for Odin directories
     jai = true, -- Look for Jai files
     devcontainer = true, -- Look for devcontainer files
+    ui_select_kind = nil, -- 'kind' to pass to vim.ui.select()
 }
 ```
 
